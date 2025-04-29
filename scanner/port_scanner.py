@@ -1,10 +1,12 @@
 import socket
 import time
+import threading
+import queue
 
 def scan(ip, port):
     try:
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.settimeout(0.5)
+        sock.settimeout(0.3)
         sock.connect((ip, port))
         print(f"[!] Port {port} is open")
     except:
@@ -12,19 +14,35 @@ def scan(ip, port):
     finally:
         sock.close()
 
+def worker(ip, q):
+    while not q.empty():
+        port = q.get()
+        scan(ip, port)
+        q.task_done()
 
 def scan_ports():
     start_time = time.time()
     ip_addr = input("[~] What IP address do you want to scan: ")
 
     port_range = define_port_range()
-    #port = input("[~] Enter port range(seperated by comma ','): ")
-    #port_range = port.split(',')
-    print(f"[~] Scanning {ip_addr}.")
+
+    print(f"[~] Scanning {ip_addr}...")
+
+    q = queue.Queue()
+
     for port in port_range:
-        scan(ip_addr, int(port))
+        q.put(int(port))
+
+    threads = []
+    for _ in range(100):
+        t = threading.Thread(target=worker, args=(ip_addr, q))
+        t.start()
+        threads.append(t)
+
+    q.join()
+
     end_time = time.time()
-    print(f"Scanned ports in {end_time - start_time:.2f} seconds.")
+    print(f"[~] Scan completed in {end_time - start_time:.2f} seconds.")
 
 
 def define_port_range():
@@ -34,9 +52,8 @@ def define_port_range():
     print("[3] Custom ports")
 
     option = input("-> ")
-    port_range = list(range(1, 65535))
     if option == "1":
-        port_range = [
+        return [
             1, 3, 4, 6, 7, 9, 13, 17, 19, 20, 21, 22, 23, 25, 26, 30, 32, 33, 37, 42,
             43, 49, 53, 70, 79, 80, 81, 82, 83, 84, 85, 88, 89, 90, 99, 100, 106, 109,
             110, 111, 113, 119, 125, 135, 139, 143, 144, 146, 161, 163, 179, 199, 211,
@@ -110,12 +127,11 @@ def define_port_range():
     ]
 
     if option == "2":
-        return port_range
+        return list(range(1, 65536))
 
     if option == "3":
         port = input("[~] Enter port range(seperated by comma ','): ")
-        port_range = port.split(',')
-
-    return port_range
-
-
+        return port.split(',')
+    else:
+        print("[!] Invalid Option.")
+        return []
