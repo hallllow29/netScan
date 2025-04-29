@@ -1,4 +1,4 @@
-from scanner import scan_network, display_devices
+from scanner import scan_network, display_devices, scan_ports
 
 def main_menu():
 
@@ -12,6 +12,8 @@ def main_menu():
     if x == "1":
         ip_range = input("Enter a valid IP range (example: 192.168.1.0/24): ")
         scan_network(ip_range)
+    if x == "2":
+        scan_ports()
 
 if __name__ == '__main__':
     main_menu()
