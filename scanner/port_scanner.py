@@ -3,12 +3,19 @@ import time
 import threading
 import queue
 
+
 def scan(ip, port):
     try:
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.settimeout(0.3)
+        sock.settimeout(5)
         sock.connect((ip, port))
-        print(f"[!] Port {port} is open")
+        try:
+            banner = sock.recv(1024).decode(errors='ignore').strip()
+            if not banner:
+                banner = "No banner"
+        except:
+            banner = "No banner"
+        print(f"[+] Port {port:<5} is OPEN | Banner: {banner}\n")
     except:
         pass
     finally:
@@ -131,7 +138,12 @@ def define_port_range():
 
     if option == "3":
         port = input("[~] Enter port range(seperated by comma ','): ")
-        return port.split(',')
+        try:
+            ports = [int(p.stirp()) for p in port.split(',')]
+            return ports
+        except ValueError:
+            print("[!] Invalid Input. Ports must be numbers.")
+            return []
     else:
         print("[!] Invalid Option.")
         return []
